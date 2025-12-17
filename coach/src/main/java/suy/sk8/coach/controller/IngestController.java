@@ -35,4 +35,14 @@ public class IngestController {
             return ApiResponse.error("JOB_NOT_FOUND", e.getMessage());
         }
     }
+    
+    @PostMapping("/text")
+    public ApiResponse<IngestResponse> ingestText(@Valid @RequestBody suy.sk8.coach.dto.TextIngestRequest request) {
+        try {
+            IngestResponse response = ingestService.ingestText(request);
+            return ApiResponse.success(response);
+        } catch (Exception e) {
+            return ApiResponse.error("TEXT_INGEST_FAILED", e.getMessage());
+        }
+    }
 }

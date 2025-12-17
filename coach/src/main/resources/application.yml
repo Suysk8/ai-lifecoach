@@ -23,5 +23,8 @@ dashscope:
     model: text-embedding-v4
     dimensions: 1024
 
+recording:
+  base-dir: C:\Users\cn-silversu\Desktop\recording
+
 server:
   port: 8080
