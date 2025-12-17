@@ -81,7 +81,7 @@ public class IngestService {
             log.info("Generating embeddings for {} chunks", chunks.size());
             for (int i = 0; i < chunks.size(); i++) {
                 String chunkText = chunks.get(i);
-                List<Float> embedding = embeddingService.embed(
+                List<Double> embedding = embeddingService.embed(
                         chunkText,
                         request.getEmbedding().getModel(),
                         request.getEmbedding().getDimensions());
@@ -114,34 +114,32 @@ public class IngestService {
     public IngestJob getJob(Long jobId) {
         return jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Job not found: " + jobId));
     }
-    
+
     @Transactional
     public IngestResponse ingestText(suy.sk8.coach.dto.TextIngestRequest request) {
         IngestJob job = new IngestJob();
         job.setSourcePath("text-input");
         job.setStatus("PENDING");
         job = jobRepository.save(job);
-        
+
         try {
             job.setStatus("RUNNING");
             job.setUpdatedAt(OffsetDateTime.now());
             jobRepository.save(job);
-            
+
             List<String> chunks = chunkService.chunk(
-                request.getText(),
-                request.getChunk().getMaxChars(),
-                request.getChunk().getOverlapChars()
-            );
-            
+                    request.getText(),
+                    request.getChunk().getMaxChars(),
+                    request.getChunk().getOverlapChars());
+
             log.info("Generating embeddings for {} chunks", chunks.size());
             for (int i = 0; i < chunks.size(); i++) {
                 String chunkText = chunks.get(i);
-                List<Float> embedding = embeddingService.embed(
-                    chunkText,
-                    request.getEmbedding().getModel(),
-                    request.getEmbedding().getDimensions()
-                );
-                
+                List<Double> embedding = embeddingService.embed(
+                        chunkText,
+                        request.getEmbedding().getModel(),
+                        request.getEmbedding().getDimensions());
+
                 DocumentChunk chunk = new DocumentChunk();
                 chunk.setJobId(job.getId());
                 chunk.setChunkIndex(i);
@@ -149,11 +147,11 @@ public class IngestService {
                 chunk.setEmbedding(embeddingService.formatVector(embedding));
                 chunkRepository.save(chunk);
             }
-            
+
             job.setStatus("SUCCEEDED");
             job.setUpdatedAt(OffsetDateTime.now());
             jobRepository.save(job);
-            
+
             return new IngestResponse(job.getId(), job.getStatus(), null, chunks.size());
         } catch (Exception e) {
             log.error("Text ingest failed for job {}", job.getId(), e);
