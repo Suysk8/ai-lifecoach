@@ -10,6 +10,13 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: true
+  ai:
+    mcp:
+      server:
+        enabled: true
+        name: "coach-search-mcp"
+        protocol: SSE
+
 
 dashscope:
   api-key: ${DASHSCOPE_API_KEY:sk-a01bc6f7257d43cfabd61b875fc1b5a6}
@@ -28,3 +35,4 @@ recording:
 
 server:
   port: 8080
+
