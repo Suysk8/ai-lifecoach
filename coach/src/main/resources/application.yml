@@ -12,13 +12,13 @@ spring:
     show-sql: true
 
 dashscope:
-  api-key: ${DASHSCOPE_API_KEY:123}
+  api-key: ${DASHSCOPE_API_KEY:sk-a01bc6f7257d43cfabd61b875fc1b5a6}
   asr:
     model: paraformer-realtime-v2
     format: mp3
     sample-rate: 16000
   embedding:
-    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1/
     model: text-embedding-v4
     dimensions: 1024
 
