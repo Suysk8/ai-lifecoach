@@ -30,6 +30,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.postgresql:postgresql'
     implementation("com.github.lianjiatech:retrofit-spring-boot-starter:3.2.0")
+    implementation(group: 'com.alibaba', name: 'dashscope-sdk-java', version: '2.21.16') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'

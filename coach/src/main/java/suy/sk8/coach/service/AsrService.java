@@ -1,46 +1,56 @@
 package suy.sk8.coach.service;
 
-import jakarta.annotation.Resource;
-import lombok.RequiredArgsConstructor;
+import com.alibaba.dashscope.audio.asr.recognition.Recognition;
+import com.alibaba.dashscope.audio.asr.recognition.RecognitionParam;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import retrofit2.Response;
-import suy.sk8.coach.api.AsrApi;
-import suy.sk8.coach.dto.AsrResponse;
 
 import java.io.File;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AsrService {
-
-    @Resource
-    private final AsrApi asrApi;
-
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
     @Value("${dashscope.api-key}")
     private String apiKey;
-
+    
     public String transcribe(String filePath, String model, String format, Integer sampleRate) {
         try {
             File file = new File(filePath);
-            RequestBody fileBody = RequestBody.create(MediaType.parse("audio/*"), file);
-            MultipartBody.Part filePart = MultipartBody.Part.createFormData("file", file.getName(), fileBody);
-
-            Response<AsrResponse> response = asrApi.transcribe("Bearer " + apiKey, model, format, sampleRate, filePart)
-                    .execute();
-
-            if (!response.isSuccessful()) {
-                throw new RuntimeException("ASR API failed: " + response.code());
+            if (!file.exists() || !file.canRead()) {
+                throw new RuntimeException("Audio file not found or not readable: " + filePath);
             }
-
-            return response.body().getOutput().getText();
+            
+            Recognition recognition = new Recognition();
+            RecognitionParam param = RecognitionParam.builder()
+                    .model(model)
+                    .format(format)
+                    .sampleRate(sampleRate)
+                    .apiKey(apiKey)
+                    .build();
+            
+            String jsonResult = recognition.call(param, file);
+            log.info("ASR result for file {}: {}", filePath, jsonResult);
+            
+            // 解析JSON结果，提取完整文本
+            JsonNode root = objectMapper.readTree(jsonResult);
+            JsonNode sentences = root.path("sentences");
+            
+            StringBuilder fullText = new StringBuilder();
+            for (JsonNode sentence : sentences) {
+                String text = sentence.path("text").asText();
+                if (!text.isEmpty()) {
+                    fullText.append(text);
+                }
+            }
+            
+            return fullText.toString();
         } catch (Exception e) {
-            log.error("ASR transcription failed", e);
+            log.error("ASR transcription failed for file: {}", filePath, e);
             throw new RuntimeException("ASR failed: " + e.getMessage(), e);
         }
     }

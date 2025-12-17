@@ -20,67 +20,65 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class IngestService {
-    
+
     private final IngestJobRepository jobRepository;
     private final RecordingTranscriptRepository transcriptRepository;
     private final DocumentChunkRepository chunkRepository;
     private final AsrService asrService;
     private final ChunkService chunkService;
     private final EmbeddingService embeddingService;
-    
+
     @Transactional
     public IngestResponse ingest(IngestRequest request) {
         // 1. 创建任务
         IngestJob job = new IngestJob();
         job.setSourcePath(request.getPath());
         job.setStatus("PENDING");
-        job = jobRepository.save(job);
-        
+
         try {
             // 2. 校验文件
             File file = new File(request.getPath());
             if (!file.exists() || !file.isFile()) {
                 throw new RuntimeException("File not found: " + request.getPath());
             }
-            
+
             job.setStatus("RUNNING");
             job.setUpdatedAt(OffsetDateTime.now());
-            jobRepository.save(job);
-            
+            // jobRepository.save(job);
+
             // 3. ASR 转写
             log.info("Starting ASR for job {}", job.getId());
             String transcript = asrService.transcribe(
-                request.getPath(),
-                request.getAsr().getModel(),
-                request.getAsr().getFormat(),
-                request.getAsr().getSampleRate()
-            );
-            
+                    request.getPath(),
+                    request.getAsr().getModel(),
+                    request.getAsr().getFormat(),
+                    request.getAsr().getSampleRate());
+
+            log.info("识别结果：{}", transcript);
+
             // 4. 保存转写结果
             RecordingTranscript recordingTranscript = new RecordingTranscript();
             recordingTranscript.setJobId(job.getId());
             recordingTranscript.setAsrModel(request.getAsr().getModel());
             recordingTranscript.setTranscript(transcript);
             recordingTranscript = transcriptRepository.save(recordingTranscript);
-            
+
             // 5. 切块
             log.info("Chunking transcript for job {}", job.getId());
             List<String> chunks = chunkService.chunk(
-                transcript,
-                request.getChunk().getMaxChars(),
-                request.getChunk().getOverlapChars()
-            );
-            
+                    transcript,
+                    request.getChunk().getMaxChars(),
+                    request.getChunk().getOverlapChars());
+
             // 6. 生成向量并保存
             log.info("Generating embeddings for {} chunks", chunks.size());
             for (int i = 0; i < chunks.size(); i++) {
                 String chunkText = chunks.get(i);
                 List<Float> embedding = embeddingService.embed(
-                    chunkText,
-                    request.getEmbedding().getModel(),
-                    request.getEmbedding().getDimensions()
-                );
-                
+                        chunkText,
+                        request.getEmbedding().getModel(),
+                        request.getEmbedding().getDimensions());
+
                 DocumentChunk chunk = new DocumentChunk();
                 chunk.setJobId(job.getId());
                 chunk.setChunkIndex(i);
@@ -88,14 +86,14 @@ public class IngestService {
                 chunk.setEmbedding(embeddingService.formatVector(embedding));
                 chunkRepository.save(chunk);
             }
-            
+
             // 7. 更新任务状态
             job.setStatus("SUCCEEDED");
             job.setUpdatedAt(OffsetDateTime.now());
             jobRepository.save(job);
-            
+
             return new IngestResponse(job.getId(), job.getStatus(), recordingTranscript.getId(), chunks.size());
-            
+
         } catch (Exception e) {
             log.error("Ingest failed for job {}", job.getId(), e);
             job.setStatus("FAILED");
@@ -105,9 +103,8 @@ public class IngestService {
             throw new RuntimeException("Ingest failed: " + e.getMessage(), e);
         }
     }
-    
+
     public IngestJob getJob(Long jobId) {
-        return jobRepository.findById(jobId)
-            .orElseThrow(() -> new RuntimeException("Job not found: " + jobId));
+        return jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Job not found: " + jobId));
     }
 }
