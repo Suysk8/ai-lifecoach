@@ -2,6 +2,7 @@ package suy.sk8.coach.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Type;
 import java.time.OffsetDateTime;
 
 @Data
@@ -22,6 +23,7 @@ public class DocumentChunk {
     private String chunkText;
 
     @Column(columnDefinition = "vector(1024)")
+    @Type(VectorType.class)
     private String embedding;
 
     @Column(name = "created_at", nullable = false)
