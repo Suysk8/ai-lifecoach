@@ -13,6 +13,7 @@ spring:
 
 dashscope:
   api-key: ${DASHSCOPE_API_KEY:sk-a01bc6f7257d43cfabd61b875fc1b5a6}
+  base-url: https://dashscope.aliyuncs.com/api/
   asr:
     model: paraformer-realtime-v2
     format: mp3
