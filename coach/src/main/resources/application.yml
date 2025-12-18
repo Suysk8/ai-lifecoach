@@ -16,6 +16,8 @@ spring:
         enabled: true
         name: "coach-search-mcp"
         protocol: SSE
+        tools:
+          allowed: "*"
 
 
 dashscope:

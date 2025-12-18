@@ -14,7 +14,7 @@ public class SearchMcpTools {
 
     private final SearchService searchService;
 
-    @McpTool(description = "语义检索：根据 query 在向量/语义索引中召回相关 chunk，返回排序后的结果")
+    @McpTool(description = "这个方法是个人生活教练的查询本人历史信息（生活、工作各方面）的语义检索方法：根据查询文本的query向量召回相关 chunk，返回排序后的结果")
     public SearchResponse semanticSearch(
             @McpToolParam(description = "查询文本", required = true) String query,
             @McpToolParam(description = "返回条数，默认 10") Integer topK,
